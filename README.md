@@ -12,7 +12,7 @@ Please cite that publication when using these data or the scientific methods ill
 | [02 — Microlensing catalogue](02_download_microlensing_catalogue.ipynb) | Downloads every microlensing event and joins the Gaia-source columns. A left join retains events lacking a consolidated source row. Checks catalogue counts and duplicate source IDs. | Exports CSV, FITS or VOTable, with a checksummed provenance sidecar. Choose CSV for notebooks 04, 05 and 07. |
 | [03 — Brightness-ordered catalogue](03_brightness_ordered_catalogue.ipynb) | Adds RA/Dec from `all_source_astrometry` and sorts events by baseline G magnitude, with source ID as a tie-breaker. Adds a brightness rank. Optionally verifies and attaches publication event names. | Saves an ordered CSV. Optional names come from `data/event_names.csv`; ranks alone are not official event names. |
 | [04 — Single-event physical posteriors](04_single_event_physical_posteriors.ipynb) | Propagates one event's fitted uncertainties into microlensing parallax, lens mass, source/lens distances, proper motions and lens transverse velocity. Reports 16th/50th/84th percentiles and plots scalar and joint distributions. | Reads notebook 02's CSV. Uses 100,000 mass/distance draws and 50,000 kinematic draws with reproducible seeds. |
-| [05 — Source colour–magnitude diagram](05_source_colour_magnitude_diagram.ipynb) | Builds a quality-filtered absolute colour–magnitude diagram using baseline source photometry and fitted source parallax, with optional extinction correction and Gaia DR3 density background. | Reads notebook 02's CSV; writes PNG/PDF figures and a selected-source CSV. The reference background is optional. |
+| [05 — Source colour–magnitude diagram](05_source_colour_magnitude_diagram.ipynb) | Builds a quality-filtered absolute colour–magnitude diagram using baseline source photometry and fitted source parallax, with optional extinction correction and an automatically downloaded random Gaia DR4 density background. | Reads notebook 02's CSV; writes PNG/PDF figures and a selected-source CSV. The DR4 background is downloaded and cached automatically; it can be disabled. |
 | [06 — Epoch data and other products](06_download_epoch_data_and_products.ipynb) | Downloads the complete microlensing table, selected-source catalogue rows and all available DataLink products. Preserves complete FITS bundles, image HDUs and quality flags; validates files and records an inventory. | Starts with one source. Its final cell exports per-source epoch photometry and astrometry FITS files plus provenance to `data/<source_id>/` for notebook 07. |
 | [07 — Paper-like plots](07_paper_like_plots.ipynb) | Produces paper-like G-band light curves and photometric/along-scan astrometric residual panels using the catalogue models. Shows CCD-to-transit averaging, explicit clipping masks and a full-range diagnostic. | Reads notebook 02's CSV and notebook 06's epoch exports. Writes figures, selected measurements, complete masks and checksummed provenance. |
 
@@ -87,8 +87,16 @@ prior; broad inverse-parallax tails need particular care.
 
 Notebook 05 applies explicit fit and catalogue-quality cuts. Dereddening is
 on by default and requires finite extinction estimates. Set `DEREDDEN = False`
-for observed colours and magnitudes. The optional Gaia DR3 background supplies
-comparison stars only; the microlensing sample comes from Gaia DR4.
+for observed colours and magnitudes. The background also comes from Gaia DR4:
+a bounded `random_index` window
+provides an all-sky random subset, explicit CMD-quality cuts are applied, and a
+seeded cap selects at most 150,000 eligible stars. The default window spans two
+million random indices; fewer stars are used if fewer qualify. Parallax S/N > 5,
+photometric/astrometric quality, and finite extinction estimates (when dereddening)
+define the eligible subset. It is not a completeness-corrected Galactic sample.
+The first run downloads the background; later runs reuse its checksummed ECSV
+cache and provenance under `data/dr4_cmd_reference/`. No manual background file
+is required. `USE_REFERENCE_BACKGROUND = False` makes a source-only diagram.
 
 Notebook 07 averages finite CCD measurements into transits and applies one-pass
 five-MAD-sigma clipping to astrometric lens-model residuals. It records flags,

@@ -48,27 +48,37 @@ Notebook 03 requires an exact source-ID/order match before attaching names.
 Without this table it exports brightness ranks, not official event names.
 Notebooks 04 and 07 use this optional table for matching event labels only.
 
-## Optional Gaia DR3 density background
+## Automatically downloaded Gaia DR4 CMD background
 
-Notebook 05 works without a comparison sample. To add a density background,
-download a public Gaia DR3 reference using the following ADQL and save it as
-`data/gaia_dr3_cmd_reference_extinction.vot.gz` (or change `REFERENCE_PATH`).
-Then set `USE_REFERENCE_BACKGROUND = True`.
+Notebook 05 downloads its own background from `gaiadr4.gaia_source` on first use.
+No reference table needs to be supplied. The default queries all qualifying rows
+within `0 <= random_index < 2_000_000`, applying explicit parallax and catalogue
+quality cuts, then keeps up to 150,000 finite eligible stars without replacement
+with a fixed seed. The actual count is printed and recorded; increase
+`REFERENCE_RANDOM_INDEX_LIMIT` for a larger candidate pool.
 
-```sql
-SELECT TOP 150000
-    source_id, bp_rp, phot_g_mean_mag,
-    parallax, parallax_error, parallax_over_error,
-    ag_gspphot, ebpminrp_gspphot
-FROM gaiadr3.gaia_source
-WHERE random_index < 10000000
-  AND parallax_over_error > 3
-  AND parallax > 0
-  AND bp_rp IS NOT NULL
-  AND phot_g_mean_mag IS NOT NULL
-  AND ag_gspphot IS NOT NULL
-  AND ebpminrp_gspphot IS NOT NULL
+Because `random_index` defines the random subset, this introduces no sky or
+brightness cut. The CMD eligibility cuts still select the represented population:
+positive parallax/error, parallax S/N > 5, RUWE < 1.4, at least nine visibility
+periods, G flux S/N > 50, BP/RP flux S/N > 20, reliable G photometry, and finite
+colour/magnitude. Dereddened diagrams additionally need finite DR4 `ag` and
+`ebpminrp` estimates. This is not a completeness-corrected Galactic sample.
+
+The download uses metadata checks, sequential resumable asynchronous queries,
+independent counts, and TAP overflow/error validation. It retains raw VOTables,
+ADQL and job ledgers under `data/dr4_cmd_reference/tap/`. Each processed sample
+has its own directory:
+
+```text
+data/dr4_cmd_reference/samples/<request_hash>/sample.ecsv
+data/dr4_cmd_reference/samples/<request_hash>/provenance.json
 ```
 
-This is a bounded comparison sample, not a complete Gaia DR3 catalogue.
-Keep its query, job ID and download date with the local file.
+The request hash includes endpoint, schema, release, query, quality thresholds,
+dereddening, seed and sample cap. A validated cache is reused without archive
+access; changed settings create another sample, and interrupted submitted jobs
+are resumed. The plot also records the reference provenance alongside its PNG,
+PDF and selected-source CSV in `outputs/gaiadr4/`.
+
+Set `USE_REFERENCE_BACKGROUND = False` to omit the background. These generated
+downloads remain local and are excluded from Git by the repository's `.gitignore`.
