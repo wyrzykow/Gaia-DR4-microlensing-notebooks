@@ -1,0 +1,23 @@
+# Python and notebook caches
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
+.matplotlib_cache/
+.matplotlib-cache/
+.cache/
+.pytest_cache/
+.DS_Store
+
+# Generated catalogues, queries, bundles, measurements and figures
+outputs/
+data/*
+!data/README.md
+
+# Local credentials and session material
+.env
+.env.*
+*.cookies
+*cookie*.txt
+credentials*
