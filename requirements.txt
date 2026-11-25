@@ -1,0 +1,10 @@
+jupyterlab
+ipykernel
+ipython
+numpy
+pandas
+matplotlib
+astropy
+astroquery
+astromet
+# Optional colour map: cmasher
